@@ -1,0 +1,8 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label": "Pulse: dev", "type": "shell", "command": ".venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000", "problemMatcher": []},
+    {"label": "Pulse: test", "type": "shell", "command": ".venv/bin/python -m pytest -q", "group": "test", "problemMatcher": []},
+    {"label": "Pulse: typecheck", "type": "shell", "command": ".venv/bin/python -m mypy app", "problemMatcher": []}
+  ]
+}

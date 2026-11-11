@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5ee"><title>Pulse · Realtime monitoring lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2322382e'/%3E%3Cpath d='M8 33h12l7-16 10 31 7-15h12' stroke='%23d8ec9c' stroke-width='4' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="static/style.css"><script defer src="static/app.js"></script>
+</head>
+<body>
+  <aside class="rail" aria-label="Brand"><a class="brand" href="./" aria-label="Pulse home"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M2 19h8l5-11 7 22 5-11h7"/></svg></a><span class="rail-label">SYSTEM LAB / 01</span><span class="rail-bottom">P.</span></aside>
+  <div class="shell">
+    <header class="topbar"><a class="wordmark" href="./">pulse<span> / Realtime monitoring lab</span></a><div class="top-status"><span class="demo-tag">SYNTHETIC DATA</span><span id="connection" role="status" class="connection">Connecting</span></div></header>
+    <main>
+      <div class="intro"><div><div class="eyebrow">INFRASTRUCTURE / OVERVIEW</div><h1>Every system, in sync<span>.</span></h1><p>Six servers. One live view. Every data point is simulated.</p></div><div class="intro-side"><span class="env-dot"></span>DEVELOPMENT SANDBOX<br><span id="clock">Waiting for the first update</span></div></div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <section class="metrics" aria-label="System summary">
+        <div><span class="metric-label">Online servers <span>01</span></span><strong id="online">—<small> / 6</small></strong><span class="metric-note">Across three simulated regions</span></div>
+        <div><span class="metric-label">Average CPU <span>02</span></span><strong id="cpu">—<small>%</small></strong><span class="metric-note">Online servers only</span></div>
+        <div><span class="metric-label">Average memory <span>03</span></span><strong id="memory">—<small>%</small></strong><span class="metric-note">Online servers only</span></div>
+        <div><span class="metric-label">Total network traffic <span>04</span></span><strong id="network">—<small> Mbps</small></strong><span class="metric-note" id="warning-count">Waiting for status updates</span></div>
+      </section>
+      <div class="workspace">
+        <div class="primary">
+          <section class="chart-section" aria-labelledby="chart-title"><div class="section-head"><div><span class="eyebrow">LIVE TELEMETRY</span><h2 id="chart-title">Resource trends</h2></div><span class="window-label">Last 5 minutes</span></div><div class="chart-legend"><span><i class="legend-cpu"></i>CPU</span><span><i class="legend-memory"></i>Memory</span><span id="stream-status">Waiting for data</span></div><div class="chart-wrap"><canvas id="chart" role="img" aria-label="Average CPU and memory usage percentages over the last five minutes"></canvas><p id="chart-empty">Establishing the data stream…</p></div><div class="chart-footer"><span>Utilization / %</span><span>WebSocket · <b id="messages">0</b> messages</span></div></section>
+          <section class="servers-section" aria-labelledby="servers-title"><div class="section-head"><div><span class="eyebrow">YOUR FLEET</span><h2 id="servers-title">Server overview <span class="count">06</span></h2></div><label class="filter-label">Status <select id="filter"><option value="all">All servers</option><option value="healthy">Healthy</option><option value="warning">Warning</option><option value="offline">Offline</option></select></label></div><div class="table-scroll"><table><thead><tr><th>Server / Region</th><th>Status</th><th>CPU</th><th>Memory</th><th>Network Mbps</th></tr></thead><tbody id="servers"><tr><td colspan="5">Waiting for server data…</td></tr></tbody></table></div></section>
+        </div>
+        <aside class="secondary">
+          <section class="control-section" aria-labelledby="control-title"><div class="eyebrow">MAKE SOMETHING HAPPEN</div><h2 id="control-title">Simulation controls</h2><p>Set the pace. Introduce a little chaos.</p><div class="control-line"><label for="interval">Update interval</label><select id="interval"><option value="0.25">Every 0.25 s</option><option value="0.5">Every 0.5 s</option><option value="1" selected>Every 1 s</option><option value="2">Every 2 s</option><option value="5">Every 5 s</option></select></div><button class="pause-button" id="pause" disabled>Pause simulation <span>Ⅱ</span></button><div class="divider"></div><label class="field-label" for="target">Target server</label><select id="target" class="target-select" disabled><option>Waiting for servers</option></select><div class="fault-buttons"><button id="spike" disabled>↗ CPU spike</button><button id="offline" disabled>⊘ Take offline</button></div><button id="recover" class="recover-button" disabled>↺ Restore service</button><p class="control-hint">Changes sync across all connected browsers.<br>You can inject faults while paused.</p></section>
+          <section class="events-section" aria-labelledby="events-title"><div class="section-head"><h2 id="events-title">Event log</h2><span class="event-indicator"></span></div><div id="events" class="event-list"><p class="empty">No events yet</p></div></section>
+          <div class="lab-note"><span>↳</span><p>A playground for development.<br>No database or real servers. Restart to reset.</p></div>
+        </aside>
+      </div>
+      <footer><span>PULSE / A SMALL REALTIME EXPERIMENT</span><div><a href="docs" target="_blank" rel="noopener">API docs ↗</a><a href="api/health" target="_blank" rel="noopener">Health check ↗</a></div></footer>
+    </main>
+  </div>
+</body></html>
