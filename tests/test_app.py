@@ -175,3 +175,37 @@ def test_new_simulator_resets_state():
     assert not fresh.settings.paused
     assert fresh.summary()["online"] == 6
     assert fresh.servers[0]["fault"] is None
+
+
+def test_real_transport_faults_and_server_disconnect(server):
+    from websocket import ABNF
+    ws_url = server.replace("http:", "ws:") + "/ws"
+    ws = create_connection(ws_url, timeout=3, http_proxy_host=None)
+    try:
+        assert json.loads(ws.recv())["type"] == "snapshot"
+        api(server, "/api/diagnostics/faults", "PUT", {"error_status": 503})
+        with pytest.raises(HTTPError) as exc:
+            api(server, "/api/health")
+        assert exc.value.code == 503
+        assert api(server, "/api/diagnostics")["connected_clients"] >= 1
+        api(server, "/api/diagnostics/faults", "DELETE")
+        assert api(server, "/api/health")["status"] == "ok"
+        ws.send(json.dumps({"type": "ping", "id": "live-probe"}))
+        pong = receive_until(ws, lambda data: data["type"] == "pong")
+        assert pong["id"] == "live-probe"
+        api(server, "/api/diagnostics/disconnect", "POST")
+        for _ in range(30):
+            opcode, data = ws.recv_data(control_frame=True)
+            if opcode == ABNF.OPCODE_CLOSE:
+                assert int.from_bytes(data[:2], "big") == 1012
+                break
+        else:
+            pytest.fail("Server did not send a close frame")
+        replacement = create_connection(ws_url, timeout=3, http_proxy_host=None)
+        try:
+            assert json.loads(replacement.recv())["type"] == "snapshot"
+        finally:
+            replacement.close()
+    finally:
+        ws.close()
+        api(server, "/api/diagnostics/faults", "DELETE")

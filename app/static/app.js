@@ -19,14 +19,7 @@ function error(message = '') {
   $('error').hidden = !message;
 }
 async function api(path, method = 'GET', body) {
-  const response = await fetch(new URL(path, base), {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!response.ok) throw new Error(`Request failed (HTTP ${response.status}). Please try again.`);
-  return response.json();
+  return window.pulseDiagnostics.request(path, method, body);
 }
 function controls() {
   for (const id of ['pause', 'interval', 'target', 'spike', 'offline', 'recover']) {
@@ -51,8 +44,14 @@ function renderServers() {
   // All interpolated strings originate from fixed server metadata and validated numeric metrics.
   $('servers').innerHTML = rows.map(s => `<tr><td>${s.name}<span class="region">${s.region} · ${s.id}</span></td><td><span class="badge ${s.status}">${statuses[s.status]}</span></td><td><div class="usage"><span class="bar ${s.cpu >= 80 ? 'warn' : ''}"><span style="width:${s.cpu}%"></span></span>${s.cpu.toFixed(1)}%</div></td><td>${s.memory.toFixed(1)}%</td><td>${s.network.toFixed(1)}</td></tr>`).join('') || '<tr><td colspan="5">No servers match this status.</td></tr>';
 }
+function renderSettings(settings) {
+  $('stream-status').textContent = settings.paused ? 'Simulation paused' : `Updating every ${settings.interval} s`;
+  $('pause').innerHTML = settings.paused ? 'Resume simulation <span>▶</span>' : 'Pause simulation <span>Ⅱ</span>';
+  $('interval').value = settings.interval;
+}
 function apply(data) {
   state = data;
+  window.pulseDiagnostics.telemetry(data);
   if (data.history) history = data.history;
   if (data.point && (!history.length || history[history.length - 1].time !== data.point.time)) history.push(data.point);
   history = history.filter(p => Date.parse(p.time) >= Date.now() - 300000).slice(-1201);
@@ -63,9 +62,7 @@ function apply(data) {
   metric('network', s.network.toFixed(1), ' Mbps');
   $('warning-count').textContent = s.warnings ? `${s.warnings} ${s.warnings === 1 ? 'server needs' : 'servers need'} attention` : 'All servers are healthy';
   $('clock').textContent = `Last synced ${timeLabel(data.time)}`;
-  $('stream-status').textContent = data.settings.paused ? 'Simulation paused' : `Updating every ${data.settings.interval} s`;
-  $('pause').innerHTML = data.settings.paused ? 'Resume simulation <span>▶</span>' : 'Pause simulation <span>Ⅱ</span>';
-  $('interval').value = data.settings.interval;
+  renderSettings(data.settings);
   if ($('target').options[0]?.value !== data.servers[0].id) {
     $('target').replaceChildren(...data.servers.map(s => new Option(s.name, s.id)));
   }
@@ -132,12 +129,15 @@ function connect() {
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   $('connection').textContent = 'Connecting';
   $('connection').classList.remove('live');
+  window.pulseDiagnostics.connecting();
   socket = new WebSocket(url);
   socket.onopen = () => {
+    window.pulseDiagnostics.opened();
+    window.pulseDiagnostics.ping(socket);
     lastMessage = Date.now();
     heartbeat = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) socket.send('ping');
-    }, 15000);
+      if (socket.readyState === WebSocket.OPEN) window.pulseDiagnostics.ping(socket);
+    }, 5000);
     watchdog = setInterval(() => {
       if (Date.now() - lastMessage > 20000) socket.close();
     }, 5000);
@@ -145,6 +145,11 @@ function connect() {
   socket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
+      lastMessage = Date.now();
+      if (data.type === 'pong') {
+        window.pulseDiagnostics.pong(data);
+        return;
+      }
       apply(data);
       lastMessage = Date.now();
       retry = 500;
@@ -155,7 +160,8 @@ function connect() {
     } catch { error('Could not read the incoming data. Please refresh.'); }
   };
   socket.onerror = () => socket.close();
-  socket.onclose = () => {
+  socket.onclose = (event) => {
+    window.pulseDiagnostics.closed(event);
     clearInterval(heartbeat);
     clearInterval(watchdog);
     $('connection').textContent = 'Disconnected · Retrying';
@@ -167,14 +173,14 @@ function connect() {
 }
 $('filter').addEventListener('change', renderServers);
 $('pause').addEventListener('click', () => action(async () => {
-  await api('api/settings', 'PUT', { ...state.settings, paused: !state.settings.paused });
-  apply(await api('api/snapshot'));
+  state.settings = await api('api/settings', 'PUT', { ...state.settings, paused: !state.settings.paused });
+  renderSettings(state.settings);
 }));
 $('interval').addEventListener('change', () => {
   const interval = Number($('interval').value);
   action(async () => {
-    try { await api('api/settings', 'PUT', { ...state.settings, interval }); }
-    finally { apply(await api('api/snapshot')); }
+    try { state.settings = await api('api/settings', 'PUT', { ...state.settings, interval }); }
+    finally { renderSettings(state.settings); }
   });
 });
 for (const [id, kind] of [['spike', 'cpu'], ['offline', 'offline'], ['recover', 'recover']]) {

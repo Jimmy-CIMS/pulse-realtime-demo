@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f5ee"><title>Pulse · Realtime monitoring lab</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2322382e'/%3E%3Cpath d='M8 33h12l7-16 10 31 7-15h12' stroke='%23d8ec9c' stroke-width='4' fill='none'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="static/style.css"><script defer src="static/app.js"></script>
+  <link rel="stylesheet" href="static/style.css"><script defer src="static/diagnostics.js"></script><script defer src="static/app.js"></script>
 </head>
 <body>
   <aside class="rail" aria-label="Brand"><a class="brand" href="./" aria-label="Pulse home"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M2 19h8l5-11 7 22 5-11h7"/></svg></a><span class="rail-label">SYSTEM LAB / 01</span><span class="rail-bottom">P.</span></aside>
@@ -18,6 +18,30 @@
         <div><span class="metric-label">Average CPU <span>02</span></span><strong id="cpu">—<small>%</small></strong><span class="metric-note">Online servers only</span></div>
         <div><span class="metric-label">Average memory <span>03</span></span><strong id="memory">—<small>%</small></strong><span class="metric-note">Online servers only</span></div>
         <div><span class="metric-label">Total network traffic <span>04</span></span><strong id="network">—<small> Mbps</small></strong><span class="metric-note" id="warning-count">Waiting for status updates</span></div>
+      </section>
+      <section class="diagnostics" aria-labelledby="diagnostics-title">
+        <div class="section-head"><div><span class="eyebrow">TEST THE CONNECTION</span><h2 id="diagnostics-title">Connection diagnostics</h2></div><button id="diag-download" class="outline-button">Download report ↓</button></div>
+        <div class="diagnostic-readings">
+          <div><span>Last API request</span><strong id="diag-api-latency">—</strong><small id="diag-api-result">Waiting for a response</small></div>
+          <div><span>WebSocket round trip</span><strong id="diag-ws-rtt">—</strong><small>Application ping / pong</small></div>
+          <div><span>Reconnections</span><strong id="diag-reconnects">0</strong><small>Successful reconnects in this tab</small></div>
+          <div><span>Telemetry age</span><strong id="diag-age">—</strong><small id="diag-freshness">Waiting for telemetry</small></div>
+          <div><span>Connected clients</span><strong id="diag-clients">—</strong><small>Shared backend connections</small></div>
+        </div>
+        <p id="diag-fault-status" class="fault-status" role="status">Checking transport settings…</p>
+        <details class="connection-details"><summary>Connection URLs</summary><dl><dt>Page</dt><dd id="diag-url-page"></dd><dt>API</dt><dd id="diag-url-api"></dd><dt>WebSocket</dt><dd id="diag-url-ws"></dd></dl></details>
+        <details class="fault-lab"><summary>Transport fault lab <span>Temporary faults · shared across browsers</span></summary>
+          <form id="diag-form" class="fault-form">
+            <label>API delay<select id="diag-delay"><option value="0">No delay</option><option value="500">500 ms</option><option value="2000">2 seconds</option><option value="12000">12 seconds (timeout)</option></select></label>
+            <label>API response<select id="diag-error"><option value="0">Normal response</option><option value="500">HTTP 500</option><option value="503">HTTP 503</option></select></label>
+            <label>Auto-clear after<select id="diag-duration"><option value="10">10 seconds</option><option value="30" selected>30 seconds</option><option value="60">60 seconds</option></select></label>
+            <label class="checkbox-label"><input type="checkbox" id="diag-silence"> Pause broadcasts</label>
+            <button id="diag-apply" class="outline-button" type="submit">Apply faults</button>
+          </form>
+          <p class="fault-hint">HTTP faults affect health, snapshot, and server reads. Broadcast pauses keep ping / pong active. Control and recovery endpoints stay available. New connections receive an initial snapshot.</p>
+          <div class="diagnostic-actions"><button id="diag-probe" class="outline-button">Test API</button><button id="diag-disconnect" class="outline-button">Disconnect all sockets</button><button id="diag-clear" class="outline-button">Clear transport faults</button></div>
+        </details>
+        <p id="diag-notice" class="diagnostic-notice" role="status" hidden></p>
       </section>
       <div class="workspace">
         <div class="primary">
